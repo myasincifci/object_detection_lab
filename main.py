@@ -1,3 +1,4 @@
+import imp
 from torchvision import datasets
 from torchvision import transforms
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
@@ -9,11 +10,16 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 
 from data import labels as lbl
-
 from torch.utils.tensorboard import SummaryWriter
 
+from tqdm import tqdm
+
 BATCH_SIZE = 8
-NUM_WORKERS = 0
+NUM_WORKERS = 8
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+print(device)
 
 T = transforms.Compose([
     transforms.Resize((224,224)),
@@ -40,14 +46,22 @@ trainloader = DataLoader(voc_train_data, batch_size=BATCH_SIZE, num_workers=NUM_
 testloader = DataLoader(voc_test_data, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, collate_fn=coll_fn)
 
 model = fasterrcnn_resnet50_fpn()
+model.to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-for epoch in range(100):  # loop over the dataset multiple times
+for epoch in range(10):
     
     running_loss = 0.0
-    for i, (images, targets) in enumerate(trainloader):
+    for i, (images, targets) in enumerate(tqdm(trainloader)):
+
+        images = images.to(device)
+
+        for target in targets:
+            target['boxes'] = target['boxes'].to(device)
+            target['labels'] = target['labels'].to(device)
+
         # zero the parameter gradients
         optimizer.zero_grad()
 
@@ -58,7 +72,7 @@ for epoch in range(100):  # loop over the dataset multiple times
         
         loss = outputs['loss_classifier'] + outputs['loss_box_reg']
 
-        print(f'        [m_batch: {i}], loss: {loss}')
+        # print(f'        [m_batch: {i}], loss: {loss}')
 
         loss.backward()
         
