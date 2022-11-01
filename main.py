@@ -1,4 +1,3 @@
-import imp
 from torchvision import datasets
 from torchvision import transforms
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
@@ -36,7 +35,8 @@ def coll_fn(x):
 
     labels = [l['annotation']['object'] for l in labels]
     labels = [{
-            'boxes':  torch.tensor([list(map(int, b['bndbox'].values())) for b in l]),
+            # 'boxes':  torch.tensor([list(map(int, b['bndbox'].values())) for b in l]),
+            'boxes':  torch.tensor([list(map(int, [b['bndbox']['xmin'],b['bndbox']['ymin'],b['bndbox']['xmax'],b['bndbox']['ymax']])) for b in l]),
             'labels': torch.tensor([lbl[b['name']] for b in l])
         } for l in labels]
 
@@ -67,8 +67,6 @@ for epoch in range(10):
 
         # forward + backward + optimize
         outputs = model(images, targets)
-        # loss = criterion(outputs, targets)
-        # loss.backward()
         
         loss = outputs['loss_classifier'] + outputs['loss_box_reg']
 
