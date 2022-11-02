@@ -1,3 +1,11 @@
+#!./env/bin python
+#$ -N frcnn # name of the experiment
+#$ -l cuda=1 # remove this line when no GPU is needed!
+#$ -q all.q # do not fill the qlogin queue
+#$ -cwd # start processes in current directory
+#$ -V # provide environment variables
+#$ -t 1-1 # start 100 instances: from 1 to 100
+
 from torchvision import datasets
 from torchvision import transforms
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
@@ -9,15 +17,14 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 
 from data import labels as lbl
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 
 from tqdm import tqdm
 
-BATCH_SIZE = 8
-NUM_WORKERS = 8
+BATCH_SIZE = 16
+NUM_WORKERS = 2
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
 print(device)
 
 T = transforms.Compose([
@@ -25,8 +32,8 @@ T = transforms.Compose([
     transforms.ToTensor()
 ])
 
-voc_train_data = datasets.VOCDetection(root='./datasets/', image_set="train", transform=T, year='2012')
-voc_test_data  = datasets.VOCDetection(root='./datasets/', image_set="val", transform=T, year='2012')
+voc_train_data = datasets.VOCDetection(root='./datasets/', image_set="train", transform=T, year='2012', download=True)
+voc_test_data  = datasets.VOCDetection(root='./datasets/', image_set="val", transform=T, year='2012', download=True)
 
 def coll_fn(x):
     inputs, labels = zip(*x)
